@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-redis/cache/v8"
 	"github.com/go-redis/redis/v8"
+	"github.com/joho/godotenv"
 )
 
 type DBRedis interface {
@@ -26,11 +27,17 @@ var onceRedis sync.Once
 
 func GetInstanceRedis() DBRedis {
 	onceRedis.Do(func() {
+		error := godotenv.Load()
+		if error != nil {
+			panic("Failed load env file")
+		}
 		db, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
+		addr := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
+		password := os.Getenv("REDIS_PASSWORD")
 
 		instanceRedis = &dbredis{
-			Addr:     os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
-			Password: os.Getenv("REDIS_PASSWORD"),
+			Addr:     addr,
+			Password: password,
 			DB:       db,
 		}
 	})

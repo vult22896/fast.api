@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/mgo.v2"
 )
 
@@ -28,12 +29,21 @@ var (
 
 func GetInstanceMongo() MongoDB {
 	onceMongo.Do(func() {
+		error := godotenv.Load()
+		if error != nil {
+			panic("Failed load env file")
+		}
+		user := os.Getenv("DB_Mongo_User")
+		pass := os.Getenv("DB_Mongo_Password")
+		host := os.Getenv("DB_Mongo_Host")
+		port := os.Getenv("DB_Mongo_Port")
+		name := os.Getenv("DB_Mongo_Name")
 		instanceMongo = &mongodb{
-			DB_Mongo_User:     os.Getenv("DB_Mongo_User"),
-			DB_Mongo_Password: os.Getenv("DB_Mongo_Password"),
-			DB_Mongo_Host:     os.Getenv("DB_Mongo_Host"),
-			DB_Mongo_Port:     os.Getenv("DB_Mongo_Port"),
-			DB_Mongo_Name:     os.Getenv("DB_Mongo_Name"),
+			DB_Mongo_User:     user,
+			DB_Mongo_Password: pass,
+			DB_Mongo_Host:     host,
+			DB_Mongo_Port:     port,
+			DB_Mongo_Name:     name,
 		}
 	})
 	return instanceMongo

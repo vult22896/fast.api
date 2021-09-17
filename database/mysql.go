@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -25,11 +26,21 @@ var onceMySql sync.Once
 
 func GetInstanceMysql() Sql {
 	onceMySql.Do(func() {
+		error := godotenv.Load()
+		if error != nil {
+			panic("Failed load env file")
+		}
+
+		dbUser := os.Getenv("DB_USERNAME")
+		dbPassword := os.Getenv("DB_PASSWORD")
+		dbHost := os.Getenv("DB_HOST")
+		dbName := os.Getenv("DB_NAME")
+
 		instanceMysql = &sql{
-			DB_User:     os.Getenv("DB_User"),
-			DB_Password: os.Getenv("DB_Password"),
-			DB_Name:     os.Getenv("DB_Name"),
-			DB_Host:     os.Getenv("DB_Name") + ":" + os.Getenv("DB_PORT"),
+			DB_User:     dbUser,
+			DB_Password: dbPassword,
+			DB_Name:     dbName,
+			DB_Host:     dbHost,
 		}
 	})
 	return instanceMysql

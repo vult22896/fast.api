@@ -9,5 +9,5 @@ type Ufriend struct {
 }
 
 func (Ufriend) TableName() string {
-	return "u_friend"
+	return "ufriend"
 }
