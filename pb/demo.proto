@@ -1,0 +1,6 @@
+syntax = "proto3";
+package demo;
+
+option go_package="demo";
+
+service DemoService {}
