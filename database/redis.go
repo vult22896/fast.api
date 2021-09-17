@@ -1,6 +1,8 @@
 package database
 
 import (
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -24,10 +26,12 @@ var onceRedis sync.Once
 
 func GetInstanceRedis() DBRedis {
 	onceRedis.Do(func() {
+		db, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
+
 		instanceRedis = &dbredis{
-			Addr:     "localhost:6379",
-			Password: "",
-			DB:       0,
+			Addr:     os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       db,
 		}
 	})
 	return instanceRedis
@@ -35,9 +39,9 @@ func GetInstanceRedis() DBRedis {
 
 func (dbRedis *dbredis) Connect() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     dbRedis.Addr,
+		Password: dbRedis.Password,
+		DB:       dbRedis.DB,
 	})
 	return rdb
 }
@@ -45,7 +49,7 @@ func (dbRedis *dbredis) Connect() *redis.Client {
 func (dbredis *dbredis) Caching() *cache.Cache {
 	ring := redis.NewRing(&redis.RingOptions{
 		Addrs: map[string]string{
-			"server1": ":6379",
+			"server1": ":" + os.Getenv("REDIS_PORT"),
 		},
 	})
 

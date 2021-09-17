@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -25,10 +26,10 @@ var onceMySql sync.Once
 func GetInstanceMysql() Sql {
 	onceMySql.Do(func() {
 		instanceMysql = &sql{
-			DB_User:     "bibabo",
-			DB_Password: "l^8V4Pxis33ADB^p2HF@",
-			DB_Name:     "bibabo_beauty",
-			DB_Host:     "34.87.188.97:62226",
+			DB_User:     os.Getenv("DB_User"),
+			DB_Password: os.Getenv("DB_Password"),
+			DB_Name:     os.Getenv("DB_Name"),
+			DB_Host:     os.Getenv("DB_Name") + ":" + os.Getenv("DB_PORT"),
 		}
 	})
 	return instanceMysql

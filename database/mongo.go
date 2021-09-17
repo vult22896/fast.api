@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -28,11 +29,11 @@ var (
 func GetInstanceMongo() MongoDB {
 	onceMongo.Do(func() {
 		instanceMongo = &mongodb{
-			DB_Mongo_User:     "",
-			DB_Mongo_Password: "",
-			DB_Mongo_Host:     "127.0.0.1",
-			DB_Mongo_Port:     "27017",
-			DB_Mongo_Name:     "bibabo",
+			DB_Mongo_User:     os.Getenv("DB_Mongo_User"),
+			DB_Mongo_Password: os.Getenv("DB_Mongo_Password"),
+			DB_Mongo_Host:     os.Getenv("DB_Mongo_Host"),
+			DB_Mongo_Port:     os.Getenv("DB_Mongo_Port"),
+			DB_Mongo_Name:     os.Getenv("DB_Mongo_Name"),
 		}
 	})
 	return instanceMongo
