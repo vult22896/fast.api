@@ -36,7 +36,7 @@ func (s *postAttachService) AttachInfo() {
 
 func (s *postAttachService) attachInfoForAnswer() {
 	for key, post := range s.posts {
-		for idx, _ := range post.Comments {
+		for idx := range post.Comments {
 			s.posts[key].Comments[idx].CommunityPointByAnswer = 11
 			s.posts[key].Comments[idx].User.IsFollow = 1
 		}
@@ -53,12 +53,15 @@ func (s *postAttachService) attachInfoUser() {
 	listUserFollowing := userCacheService.ListUserFollowing()
 	listGroupFollow := userCacheService.ListGroupFollow()
 	listTopicFollow := userCacheService.ListTopicFollow()
+	listPostLike := userCacheService.ListPostLike()
+
 	for key, post := range s.posts {
 		s.posts[key].User.IsFollow = helpers.ConvertBoolToInt(helpers.SliceIntContainsValue(listUserFollowing, post.User.ID))
 		s.posts[key].Group.IsFollow = helpers.ConvertBoolToInt(helpers.SliceIntContainsValue(listGroupFollow, post.Group.ID))
-		for index, _ := range post.Topics {
+		for index := range post.Topics {
 			s.posts[key].Topics[index].IsFollow = helpers.ConvertBoolToInt(helpers.SliceIntContainsValue(listTopicFollow, post.Topics[index].ID))
 		}
+		s.posts[key].IsLike = helpers.ConvertBoolToInt(helpers.SliceIntContainsValue(listPostLike, post.ID))
 	}
 }
 

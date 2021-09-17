@@ -9,7 +9,3 @@ type Group struct {
 	NumberMember int    `json:"numberMember"`
 	NumberPost   int    `json:"numberPost"`
 }
-
-type GroupId struct {
-	ID int `json:"id"`
-}
