@@ -1,9 +1,14 @@
 package lib
 
 import (
+	"math/rand"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	stringHelper "fast.bibabo.vn/helpers"
+	"github.com/joho/godotenv"
 )
 
 const FOLDER_DEFAULT_DEV = "dev/d/"
@@ -30,6 +35,7 @@ const IMAGE_LAYOUT_LANDSCAPE = "landscape"
 
 type Cdn interface {
 	GetImage(image string, folder string, width int, height int) string
+	GetHost() string
 }
 type cdn struct{}
 
@@ -49,6 +55,17 @@ func (c cdn) GetImage(image string, folder string, width int, height int) string
 	firstChar := image[:1]
 	first2Char := image[:2]
 
-	path := "https://cdn.bbbnet.xyz" + "/uploads/bo/vi/" + folder + firstChar + "/" + first2Char + "/" + fileName + "-" + strconv.Itoa(width) + "x" + strconv.Itoa(height) + "-resize." + extention
+	path := c.GetHost() + "/uploads/bo/vi/" + folder + firstChar + "/" + first2Char + "/" + fileName + "-" + strconv.Itoa(width) + "x" + strconv.Itoa(height) + "-resize." + extention
 	return path
+}
+
+func (c cdn) GetHost() string {
+	error := godotenv.Load()
+	if error != nil {
+		panic("Failed load env file")
+	}
+	videoEdgeServerUrl := os.Getenv("VIDEO_EDGE_SERVER_URL")
+	parseSlice := strings.Split(videoEdgeServerUrl, ",")
+	rand.Seed(time.Now().UnixNano())
+	return parseSlice[rand.Intn(len(parseSlice))]
 }

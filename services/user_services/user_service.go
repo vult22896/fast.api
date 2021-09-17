@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"fast.bibabo.vn/database"
 	"fast.bibabo.vn/models"
 	"github.com/go-redis/cache/v8"
 )
@@ -15,9 +14,6 @@ type UserService interface {
 
 type userService struct {
 }
-
-var caching = database.GetInstanceRedis().Caching()
-var db = database.GetInstanceMysql().Connect()
 
 func GetIntanceUserService() UserService {
 	return &userService{}
