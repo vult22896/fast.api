@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"fast.bibabo.vn/database"
 	"fast.bibabo.vn/models"
 	authService "fast.bibabo.vn/services"
 	puService "fast.bibabo.vn/services/post_services"
@@ -17,21 +16,25 @@ import (
 
 type userController struct {
 	db              *gorm.DB
+	cache           *cache.Cache
 	userService     uService.UserService
 	postUserService puService.PostUserService
 }
 
-func NewUserController(db *gorm.DB, userService uService.UserService, postUserService puService.PostUserService) *userController {
-	return &userController{db: db}
+func NewUserController(db *gorm.DB, cache *cache.Cache, userService uService.UserService, postUserService puService.PostUserService) *userController {
+	return &userController{
+		db:              db,
+		cache:           cache,
+		userService:     userService,
+		postUserService: postUserService,
+	}
 }
 
 func (u *userController) Index(c *gin.Context) {
-	instanceRedis := database.GetInstanceRedis()
-	mycache := instanceRedis.Caching()
 
 	var users []models.User
 
-	err := mycache.Once(&cache.Item{
+	err := u.cache.Once(&cache.Item{
 		Key:   "myUsers",
 		Value: &users,
 		TTL:   time.Hour,
@@ -48,14 +51,13 @@ func (u *userController) Index(c *gin.Context) {
 }
 
 func (u *userController) Me(c *gin.Context) {
-	authService := authService.GetInstanceAuthService(u.db)
+	authService := authService.GetInstanceAuthService(u.db, u.cache)
 
 	userAuthId := authService.GetUserId()
 
 	var user models.User
 
-	myCache := database.GetInstanceRedis().Caching()
-	err := myCache.Once(&cache.Item{
+	err := u.cache.Once(&cache.Item{
 		Key:   "get_me_info",
 		Value: &user,
 		TTL:   time.Minute * 5,

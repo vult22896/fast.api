@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"fast.bibabo.vn/database"
 	"fast.bibabo.vn/models"
 	"github.com/go-redis/cache/v8"
 	"gorm.io/gorm"
@@ -19,15 +18,17 @@ type AuthService interface {
 type authService struct {
 	userId int
 	db     *gorm.DB
+	cache  *cache.Cache
 }
 
 var instanceAuthService *authService
 var onceAuthService sync.Once
 
-func GetInstanceAuthService(db *gorm.DB) AuthService {
+func GetInstanceAuthService(db *gorm.DB, cache *cache.Cache) AuthService {
 	onceAuthService.Do(func() {
 		instanceAuthService = &authService{
-			db: db,
+			db:    db,
+			cache: cache,
 		}
 	})
 	return instanceAuthService
@@ -49,10 +50,8 @@ func (s *authService) Auth(token string) bool {
 	}
 	var user_session models.UserSession
 
-	caching := database.GetInstanceRedis().Caching()
-
 	key := "user_session:" + token
-	error := caching.Once(&cache.Item{
+	error := s.cache.Once(&cache.Item{
 		Key:   key,
 		Value: &user_session,
 		TTL:   time.Minute * 30,

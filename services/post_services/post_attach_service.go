@@ -5,6 +5,7 @@ import (
 	"fast.bibabo.vn/lib"
 	"fast.bibabo.vn/mongo_models"
 	userService "fast.bibabo.vn/services/user_services"
+	"github.com/go-redis/cache/v8"
 	"gorm.io/gorm"
 )
 
@@ -20,13 +21,15 @@ type postAttachService struct {
 	posts  []mongo_models.Post
 	userId int
 	db     *gorm.DB
+	cache  *cache.Cache
 }
 
-func GetInstancePostAttachService(posts []mongo_models.Post, userId int, db *gorm.DB) PostAttachService {
+func GetInstancePostAttachService(posts []mongo_models.Post, userId int, db *gorm.DB, cache *cache.Cache) PostAttachService {
 	return &postAttachService{
 		posts:  posts,
 		userId: userId,
 		db:     db,
+		cache:  cache,
 	}
 }
 
@@ -51,7 +54,7 @@ func (s *postAttachService) attachInfoForProduct() {
 
 func (s *postAttachService) attachInfoUser() {
 
-	userCacheService := userService.GetInstanceUserCacheService(s.userId, s.db)
+	userCacheService := userService.GetInstanceUserCacheService(s.userId, s.db, s.cache)
 	listUserFollowing := userCacheService.ListUserFollowing()
 	listGroupFollow := userCacheService.ListGroupFollow()
 	listTopicFollow := userCacheService.ListTopicFollow()

@@ -14,17 +14,18 @@ type UserService interface {
 }
 
 type userService struct {
-	db *gorm.DB
+	db    *gorm.DB
+	cache *cache.Cache
 }
 
-func GetIntanceUserService(db *gorm.DB) UserService {
-	return &userService{db: db}
+func GetIntanceUserService(db *gorm.DB, cache *cache.Cache) UserService {
+	return &userService{db: db, cache: cache}
 }
 
 func (s *userService) FindOne(id int) models.User {
 	key := "find_user:" + strconv.Itoa(id)
 	var user models.User
-	error := caching.Once(&cache.Item{
+	error := s.cache.Once(&cache.Item{
 		Key:   key,
 		Value: &user,
 		TTL:   time.Minute * 30,

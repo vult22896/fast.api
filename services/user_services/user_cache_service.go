@@ -20,17 +20,18 @@ type UserCacheService interface {
 type userCacheService struct {
 	userId int
 	db     *gorm.DB
+	cache  *cache.Cache
 }
 
-func GetInstanceUserCacheService(userId int, db *gorm.DB) UserCacheService {
-	return &userCacheService{userId: userId, db: db}
+func GetInstanceUserCacheService(userId int, db *gorm.DB, cache *cache.Cache) UserCacheService {
+	return &userCacheService{userId: userId, db: db, cache: cache}
 }
 
 func (s *userCacheService) ListUserFollowing() []int {
 	var userIds []int
 	var ufriends []models.Ufriend
 	key := "list_user_following:userId-" + strconv.Itoa(s.userId)
-	error := caching.Once(&cache.Item{
+	error := s.cache.Once(&cache.Item{
 		Key:   key,
 		Value: &userIds,
 		TTL:   time.Minute * 5,
@@ -53,7 +54,7 @@ func (s *userCacheService) ListGroupFollow() []int {
 	var groupIds []int
 	var userGroupFollows []models.UserGroupFollow
 	key := "list_group_follow:user_id-" + strconv.Itoa(s.userId)
-	error := caching.Once(&cache.Item{
+	error := s.cache.Once(&cache.Item{
 		Key:   key,
 		Value: &groupIds,
 		TTL:   time.Minute * 5,
@@ -75,7 +76,7 @@ func (s *userCacheService) ListTopicFollow() []int {
 	var topicIds []int
 	var topicLikes []models.TopicLike
 	key := "list_topic_Like:user_id-" + strconv.Itoa(s.userId)
-	error := caching.Once(&cache.Item{
+	error := s.cache.Once(&cache.Item{
 		Key:   key,
 		Value: &topicIds,
 		TTL:   time.Minute * 5,
@@ -97,7 +98,7 @@ func (s *userCacheService) ListPostLike() []int {
 	var postIds []int
 	var postLikes []models.PostLike
 	key := "list_post_list:user_id-" + strconv.Itoa(s.userId)
-	error := caching.Once(&cache.Item{
+	error := s.cache.Once(&cache.Item{
 		Key:   key,
 		Value: &postIds,
 		TTL:   time.Minute * 5,
