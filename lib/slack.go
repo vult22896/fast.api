@@ -13,10 +13,9 @@ import (
 )
 
 type SlackRequestBody struct {
-	Text        string       `json:"text"`
-	IconUrl     string       `json:"icon_url"`
-	UserName    string       `json:"username"`
-	Attachments []Attachment `json:"attachments"`
+	Text     string `json:"text"`
+	IconUrl  string `json:"icon_url"`
+	UserName string `json:"username"`
 }
 
 type Attachment struct {
@@ -32,18 +31,11 @@ func SlackLog(msg string) error {
 	}
 
 	webhookUrl := os.Getenv("WEBHOOK_URL")
-	var attachments []Attachment
-	attachments = append(attachments, Attachment{
-		Filename: "test file",
-		Line:     12,
-		Message:  "Code lởm",
-	})
-	fmt.Println(attachments)
+
 	slackBody, _ := json.Marshal(SlackRequestBody{
-		Text:        msg,
-		IconUrl:     "https://img.icons8.com/emoji/96/000000/penguin--v2.png",
-		UserName:    "Gấp Gấp",
-		Attachments: attachments,
+		Text:     msg,
+		IconUrl:  "https://img.icons8.com/emoji/96/000000/penguin--v2.png",
+		UserName: "Gấp Gấp",
 	})
 	req, err := http.NewRequest(http.MethodPost, webhookUrl, bytes.NewBuffer(slackBody))
 	if err != nil {

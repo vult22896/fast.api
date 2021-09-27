@@ -6,6 +6,7 @@ import (
 
 	"fast.bibabo.vn/models"
 	"github.com/go-redis/cache/v8"
+	"gorm.io/gorm"
 )
 
 type UserService interface {
@@ -13,10 +14,11 @@ type UserService interface {
 }
 
 type userService struct {
+	db *gorm.DB
 }
 
-func GetIntanceUserService() UserService {
-	return &userService{}
+func GetIntanceUserService(db *gorm.DB) UserService {
+	return &userService{db: db}
 }
 
 func (s *userService) FindOne(id int) models.User {
@@ -27,7 +29,7 @@ func (s *userService) FindOne(id int) models.User {
 		Value: &user,
 		TTL:   time.Minute * 30,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Where("id", id).First(&user)
+			s.db.Where("id", id).First(&user)
 			return &user, nil
 		},
 	})

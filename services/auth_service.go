@@ -8,6 +8,7 @@ import (
 	"fast.bibabo.vn/database"
 	"fast.bibabo.vn/models"
 	"github.com/go-redis/cache/v8"
+	"gorm.io/gorm"
 )
 
 type AuthService interface {
@@ -17,14 +18,17 @@ type AuthService interface {
 
 type authService struct {
 	userId int
+	db     *gorm.DB
 }
 
 var instanceAuthService *authService
 var onceAuthService sync.Once
 
-func GetInstanceAuthService() AuthService {
+func GetInstanceAuthService(db *gorm.DB) AuthService {
 	onceAuthService.Do(func() {
-		instanceAuthService = &authService{}
+		instanceAuthService = &authService{
+			db: db,
+		}
 	})
 	return instanceAuthService
 }
@@ -53,9 +57,7 @@ func (s *authService) Auth(token string) bool {
 		Value: &user_session,
 		TTL:   time.Minute * 30,
 		Do: func(i *cache.Item) (interface{}, error) {
-			instanceSql := database.GetInstanceMysql()
-			db := instanceSql.Connect()
-			db.Where("token", token).First(&user_session)
+			s.db.Where("token", token).First(&user_session)
 			return &user_session, nil
 		},
 	})

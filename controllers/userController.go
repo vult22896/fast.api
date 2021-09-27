@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,22 +12,20 @@ import (
 	uService "fast.bibabo.vn/services/user_services"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/cache/v8"
+	"gorm.io/gorm"
 )
 
-type UserController struct {
+type userController struct {
+	db              *gorm.DB
+	userService     uService.UserService
+	postUserService puService.PostUserService
 }
 
-var userService = uService.GetIntanceUserService()
-var postUserService = puService.GetPostUserService()
+func NewUserController(db *gorm.DB, userService uService.UserService, postUserService puService.PostUserService) *userController {
+	return &userController{db: db}
+}
 
-func (u *UserController) Index(c *gin.Context) {
-	instanceMysql := database.GetInstanceMysql()
-	db := instanceMysql.Connect()
-
-	// var post models.Post
-	// var posts []models.Post
-	// db.Debug().Preload("User").Limit(10).Find(&posts)
-
+func (u *userController) Index(c *gin.Context) {
 	instanceRedis := database.GetInstanceRedis()
 	mycache := instanceRedis.Caching()
 
@@ -39,60 +36,23 @@ func (u *UserController) Index(c *gin.Context) {
 		Value: &users,
 		TTL:   time.Hour,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Debug().Find(&users)
-			fmt.Println("query")
+			u.db.Find(&users)
 			return users, nil
 		},
 	})
 	if err != nil {
 		panic(err)
 	}
-	// instanceMongo := database.GetInstanceMongo()
-	// mongo := instanceMongo.Connect().DB("bibabo").C("product")
-
-	// product := mongo_models.Product{
-	// 	Name: "SP 1",
-	// }
-	// var products []mongo_models.Product
-	// mongo.Find(nil).All(&products)
-
-	// pipe := mongo.Pipe([]bson.M{{"$match": bson.M{"name": "SP1"}}})
-
-	// collection := instanceMongo.Connect().DB("bibabo").C("post_points")
-
-	// match := bson.M{
-	// 	"$match": bson.M{
-	// 		"$and": []bson.M{
-	// 			{"source": 1},
-	// 			{"apps": 7}}}}
-
-	// project := bson.M{"$project": bson.M{
-	// 	"user_id":     1,
-	// 	"question_id": 1,
-	// 	"point": bson.M{
-	// 		"$divide": []interface{}{"$score", 20}},
-	// 	"score_c": bson.M{
-	// 		"$add": []interface{}{"$question_id", 10}}}}
-
-	// pipe := collection.Pipe([]bson.M{match, project})
-	// var result []bson.M
-	// iter := pipe.Iter()
-	// iter.All(&result)
-	// go func() {
-	// 	time.Sleep(time.Second * 10)
-	// }()
 
 	c.JSON(http.StatusOK, gin.H{"message": "User founded!", "users": users})
 }
 
-func (u *UserController) Me(c *gin.Context) {
-	authService := authService.GetInstanceAuthService()
+func (u *userController) Me(c *gin.Context) {
+	authService := authService.GetInstanceAuthService(u.db)
 
 	userAuthId := authService.GetUserId()
 
 	var user models.User
-
-	db := database.GetInstanceMysql().Connect()
 
 	myCache := database.GetInstanceRedis().Caching()
 	err := myCache.Once(&cache.Item{
@@ -100,7 +60,7 @@ func (u *UserController) Me(c *gin.Context) {
 		Value: &user,
 		TTL:   time.Minute * 5,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Debug().Where("id", userAuthId).First(&user)
+			u.db.Where("id", userAuthId).First(&user)
 			return user, nil
 		},
 	})
@@ -110,12 +70,12 @@ func (u *UserController) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": user})
 }
 
-func (u *UserController) Show(c *gin.Context) {
+func (u *userController) Show(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		panic(err)
 	}
-	user := userService.FindOne(id)
+	user := u.userService.FindOne(id)
 	if user.ID == 0 {
 		c.JSON(http.StatusOK, gin.H{"message": "User not found", "data": nil})
 		return
@@ -123,12 +83,12 @@ func (u *UserController) Show(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": user})
 }
 
-func (u *UserController) ListPost(c *gin.Context) {
+func (u *userController) ListPost(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	page, _ := strconv.Atoi(c.Query("page"))
 	if page <= 0 {
 		page = 1
 	}
-	posts := postUserService.FetchPosts(page, id)
+	posts := u.postUserService.FetchPosts(page, id)
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": posts})
 }

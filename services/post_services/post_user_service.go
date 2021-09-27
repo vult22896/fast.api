@@ -8,6 +8,7 @@ import (
 	"fast.bibabo.vn/mongo_models"
 	"github.com/go-redis/cache/v8"
 	"gopkg.in/mgo.v2/bson"
+	"gorm.io/gorm"
 )
 
 type PostUserService interface {
@@ -16,11 +17,13 @@ type PostUserService interface {
 
 type postUserService struct {
 	limit int
+	db    *gorm.DB
 }
 
-func GetPostUserService() PostUserService {
+func GetPostUserService(db *gorm.DB) PostUserService {
 	return &postUserService{
 		limit: 20,
+		db:    db,
 	}
 }
 
@@ -43,7 +46,7 @@ func (s *postUserService) FetchPosts(page int, userId int) []mongo_models.Post {
 	if error != nil {
 		panic(error)
 	}
-	postAttachService := GetInstancePostAttachService(posts, userId)
+	postAttachService := GetInstancePostAttachService(posts, userId, s.db)
 	postAttachService.AttachInfo()
 
 	return posts

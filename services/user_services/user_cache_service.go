@@ -6,6 +6,7 @@ import (
 
 	"fast.bibabo.vn/models"
 	"github.com/go-redis/cache/v8"
+	"gorm.io/gorm"
 )
 
 type UserCacheService interface {
@@ -18,10 +19,11 @@ type UserCacheService interface {
 
 type userCacheService struct {
 	userId int
+	db     *gorm.DB
 }
 
-func GetInstanceUserCacheService(userId int) UserCacheService {
-	return &userCacheService{userId: userId}
+func GetInstanceUserCacheService(userId int, db *gorm.DB) UserCacheService {
+	return &userCacheService{userId: userId, db: db}
 }
 
 func (s *userCacheService) ListUserFollowing() []int {
@@ -33,7 +35,7 @@ func (s *userCacheService) ListUserFollowing() []int {
 		Value: &userIds,
 		TTL:   time.Minute * 5,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Where("user_id", s.userId).Find(&ufriends)
+			s.db.Where("user_id", s.userId).Find(&ufriends)
 			for _, u := range ufriends {
 				userIds = append(userIds, u.UfriendFriendId)
 			}
@@ -56,7 +58,7 @@ func (s *userCacheService) ListGroupFollow() []int {
 		Value: &groupIds,
 		TTL:   time.Minute * 5,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Where("user_id", s.userId).Where("type", 2).Find(&userGroupFollows)
+			s.db.Where("user_id", s.userId).Where("type", 2).Find(&userGroupFollows)
 			for _, item := range userGroupFollows {
 				groupIds = append(groupIds, item.GroupId)
 			}
@@ -78,7 +80,7 @@ func (s *userCacheService) ListTopicFollow() []int {
 		Value: &topicIds,
 		TTL:   time.Minute * 5,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Where("user_id", s.userId).Where("qa_topic_like_is_like", 1).Find(&topicLikes)
+			s.db.Where("user_id", s.userId).Where("qa_topic_like_is_like", 1).Find(&topicLikes)
 			for _, item := range topicLikes {
 				topicIds = append(topicIds, item.TopicId)
 			}
@@ -100,7 +102,7 @@ func (s *userCacheService) ListPostLike() []int {
 		Value: &postIds,
 		TTL:   time.Minute * 5,
 		Do: func(i *cache.Item) (interface{}, error) {
-			db.Where("user_id", s.userId).Where("question_like_is_like", 1).Find(&postLikes)
+			s.db.Where("user_id", s.userId).Where("question_like_is_like", 1).Find(&postLikes)
 			for _, item := range postLikes {
 				postIds = append(postIds, item.PostId)
 			}

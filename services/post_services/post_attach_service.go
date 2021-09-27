@@ -5,6 +5,7 @@ import (
 	"fast.bibabo.vn/lib"
 	"fast.bibabo.vn/mongo_models"
 	userService "fast.bibabo.vn/services/user_services"
+	"gorm.io/gorm"
 )
 
 type PostAttachService interface {
@@ -18,12 +19,14 @@ type PostAttachService interface {
 type postAttachService struct {
 	posts  []mongo_models.Post
 	userId int
+	db     *gorm.DB
 }
 
-func GetInstancePostAttachService(posts []mongo_models.Post, userId int) PostAttachService {
+func GetInstancePostAttachService(posts []mongo_models.Post, userId int, db *gorm.DB) PostAttachService {
 	return &postAttachService{
 		posts:  posts,
 		userId: userId,
+		db:     db,
 	}
 }
 
@@ -48,7 +51,7 @@ func (s *postAttachService) attachInfoForProduct() {
 
 func (s *postAttachService) attachInfoUser() {
 
-	userCacheService := userService.GetInstanceUserCacheService(s.userId)
+	userCacheService := userService.GetInstanceUserCacheService(s.userId, s.db)
 	listUserFollowing := userCacheService.ListUserFollowing()
 	listGroupFollow := userCacheService.ListGroupFollow()
 	listTopicFollow := userCacheService.ListTopicFollow()
