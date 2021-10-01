@@ -31,7 +31,7 @@ func NewRouter() *gin.Engine {
 
 		groupGroup := v1.Group("group")
 		{
-			groupRepo := repositories.InstanceGroupRepository(db)
+			groupRepo := repositories.InstanceGroupRepository(db, myCache)
 			groupController := controllers.InstanceGroupController(groupRepo)
 			groupGroup.GET("list", groupController.FindAll)
 		}
