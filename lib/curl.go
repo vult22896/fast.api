@@ -1,14 +1,15 @@
 package lib
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"fast.bibabo.vn/mongo_models"
 )
 
 type Curl interface {
-	Call() ResponseCurl
+	Call() []byte
 }
 
 type Header struct {
@@ -32,12 +33,12 @@ func GetInstanceCurl(url string, method string, body string, header []Header) Cu
 	}
 }
 
-type ResponseCurl struct {
-	Status int
-	Data   interface{}
+type ResponsePromotionCurl struct {
+	Success bool
+	Data    map[string]mongo_models.Promotion
 }
 
-func (c *curl) Call() ResponseCurl {
+func (c *curl) Call() []byte {
 	client := &http.Client{}
 
 	payload := strings.NewReader(c.Body)
@@ -46,12 +47,23 @@ func (c *curl) Call() ResponseCurl {
 	if err != nil {
 		panic(err)
 	}
-	if len(c.Header) > 0 {
-		for _, v := range c.Header {
+
+	var headers []Header
+
+	headers = append(headers, Header{
+		Key:   "Content-Type",
+		Value: "application/json",
+	})
+	if c.Header != nil {
+		for _, h := range c.Header {
+			headers = append(headers, h)
+		}
+	}
+	if len(headers) > 0 {
+		for _, v := range headers {
 			req.Header.Add(v.Key, v.Value)
 		}
 	}
-
 	res, err := client.Do(req)
 	if err != nil {
 		panic(err)
@@ -62,8 +74,5 @@ func (c *curl) Call() ResponseCurl {
 	if err != nil {
 		panic(err)
 	}
-	var response ResponseCurl
-
-	json.Unmarshal([]byte(string(body)), &response)
-	return response
+	return body
 }

@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"fast.bibabo.vn/database"
 	"fast.bibabo.vn/mongo_models"
 	"github.com/go-redis/cache/v8"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"gorm.io/gorm"
 )
@@ -19,17 +19,17 @@ type postUserService struct {
 	limit int
 	db    *gorm.DB
 	cache *cache.Cache
+	mongo *mgo.Database
 }
 
-func GetPostUserService(db *gorm.DB, cache *cache.Cache) PostUserService {
+func GetPostUserService(db *gorm.DB, cache *cache.Cache, mongo *mgo.Database) PostUserService {
 	return &postUserService{
 		limit: 20,
 		db:    db,
 		cache: cache,
+		mongo: mongo,
 	}
 }
-
-var mongo = database.GetInstanceMongo().Connect().DB("bibabo")
 
 func (s *postUserService) FetchPosts(page int, userId int) []mongo_models.Post {
 	var posts []mongo_models.Post
@@ -39,7 +39,7 @@ func (s *postUserService) FetchPosts(page int, userId int) []mongo_models.Post {
 		Value: &posts,
 		TTL:   time.Minute * 5,
 		Do: func(i *cache.Item) (interface{}, error) {
-			collection := mongo.C("posts")
+			collection := s.mongo.C("posts")
 			collection.Find(bson.M{"user.id": userId}).Skip((page - 1) * s.limit).Limit(s.limit).All(&posts)
 			return &posts, nil
 		},

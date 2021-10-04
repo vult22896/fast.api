@@ -1,11 +1,16 @@
 package services
 
 import (
+	"encoding/json"
+	"os"
+	"strconv"
+
 	"fast.bibabo.vn/helpers"
 	"fast.bibabo.vn/lib"
 	"fast.bibabo.vn/mongo_models"
 	userService "fast.bibabo.vn/services/user_services"
 	"github.com/go-redis/cache/v8"
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
@@ -49,7 +54,44 @@ func (s *postAttachService) attachInfoForAnswer() {
 }
 
 func (s *postAttachService) attachInfoForProduct() {
+	var productIds []int
+	for _, post := range s.posts {
+		products := post.Products
+		for _, product := range products {
+			productIds = append(productIds, product.ID)
+		}
+	}
+	error := godotenv.Load()
+	if error != nil {
+		panic("Failed load env file")
+	}
+	domainSaleB3B := os.Getenv("SALE_B3B_URL")
+	url := domainSaleB3B + "/api/products/list"
+	jsonString, err := json.Marshal(productIds)
+	if err != nil {
+		lib.SlackLog("parse json error")
+	}
 
+	body := `{"ids":` + string(jsonString) + `}`
+	results := lib.GetInstanceCurl(url, "POST", body, nil).Call()
+
+	var responsePromotionCurl lib.ResponsePromotionCurl
+
+	json.Unmarshal([]byte(string(results)), &responsePromotionCurl)
+
+	if responsePromotionCurl.Success {
+		for key, item := range responsePromotionCurl.Data {
+			for idx, post := range s.posts {
+				products := post.Products
+				for i, product := range products {
+					converKey, _ := strconv.Atoi(key)
+					if product.ID == converKey {
+						s.posts[idx].Products[i].Promotion = item
+					}
+				}
+			}
+		}
+	}
 }
 
 func (s *postAttachService) attachInfoUser() {
@@ -102,6 +144,5 @@ func (s *postAttachService) buildLinkCdnMedia() {
 			image := item.Image
 			s.posts[key].Images[idx].Image = cdn.GetImage(image, lib.FOLDER_QUESTION, lib.SIZE_LANGE, lib.SIZE_LANGE)
 		}
-
 	}
 }

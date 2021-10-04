@@ -16,12 +16,13 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 	db := database.GetInstanceMysql().Connect()
 	myCache := database.GetInstanceRedis().Caching()
+	mongo := database.GetInstanceMongo().Connect().DB("bibabo")
 	v1 := router.Group("api/v1")
 	{
 		userGroup := v1.Group("user").Use(middlewares.Auth(db, myCache))
 		{
 			userService := uService.GetIntanceUserService(db, myCache)
-			postUserService := puService.GetPostUserService(db, myCache)
+			postUserService := puService.GetPostUserService(db, myCache, mongo)
 			userController := controllers.NewUserController(db, myCache, userService, postUserService)
 			userGroup.GET("", userController.Index)
 			userGroup.GET("me", userController.Me)

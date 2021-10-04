@@ -80,7 +80,7 @@ type Promotion struct {
 	InfoBestPrice struct {
 		BestPrice        int `json:"bestPrice"`
 		PromotionElement struct {
-			ID          string `json:"id"`
+			ID          int    `json:"id"`
 			Name        string `json:"name"`
 			Type        int    `json:"type"`
 			PromotionId int    `json:"promotionId"`
